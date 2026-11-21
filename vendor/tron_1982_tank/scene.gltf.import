@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://cekiibncqloll"
-path="res://.godot/imported/scene.gltf-55338027234a835e7fc4a6d4b242408a.scn"
+path="res://.godot/imported/scene.gltf-112f9c86cc4f8d29f6e54a5259f17128.scn"
 
 [deps]
 
-source_file="res://assets/models/tron_1982_tank/scene.gltf"
-dest_files=["res://.godot/imported/scene.gltf-55338027234a835e7fc4a6d4b242408a.scn"]
+source_file="res://vendor/tron_1982_tank/scene.gltf"
+dest_files=["res://.godot/imported/scene.gltf-112f9c86cc4f8d29f6e54a5259f17128.scn"]
 
 [params]
 

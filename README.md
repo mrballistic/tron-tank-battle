@@ -2,6 +2,14 @@
 
 A Godot 4 mobile-first tank combat prototype using the supplied Tron 1982 tank model. The battle takes place in a compact industrial arena with cover, slow cannon shells, enemy line-of-sight behavior, and a close follow camera.
 
+## Gameplay
+
+![Gameplay recorded in Godot showing the player steering across the grid as enemy tanks close in](docs/media/gameplay.gif)
+
+| The arena from spawn | Enemy tanks closing in |
+| --- | --- |
+| [![View from behind the player tank with cover on either side](docs/media/arena.jpg)](docs/media/arena.jpg) | [![Enemy tanks converging ahead of the player](docs/media/encounter.jpg)](docs/media/encounter.jpg) |
+
 ## Controls
 
 - Keyboard: **WASD** or arrows to drive, **Space** or click to fire, **R** to restart after destruction.
