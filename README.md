@@ -1,18 +1,20 @@
 # Tron Tank Battle
 
-A Godot 4 mobile-first tank combat prototype using the supplied Tron 1982 tank model. The battle takes place in a compact industrial arena with cover, slow cannon shells, enemy line-of-sight behavior, and a close follow camera.
+Drive the 1982 Tron tank across a 96 × 96 grid and engage two Evolution light tanks per wave. Bunkers break the line of sight. Each cannon fires from the tip of its rotating turret.
 
 ## Gameplay
 
 ![Gameplay recorded in Godot showing the player steering across the grid as enemy tanks close in](docs/media/gameplay.gif)
 
-| The arena from spawn | Enemy tanks closing in |
+[Watch the gameplay clip in 720p (MP4)](docs/media/gameplay.mp4)
+
+| View from spawn | Engaging the two light tanks |
 | --- | --- |
 | [![View from behind the player tank with cover on either side](docs/media/arena.jpg)](docs/media/arena.jpg) | [![Enemy tanks converging ahead of the player](docs/media/encounter.jpg)](docs/media/encounter.jpg) |
 
 ## Controls
 
-- Keyboard: **WASD** or arrows to drive, **Space** or click to fire, **R** to restart after destruction.
+- Keyboard: **WASD** or arrows to drive, right-drag to aim the turret, **Space** or left-click to fire, **R** to restart after destruction.
 - Touch: hold the lower-left stick to drive and steer, drag on the right side to aim, and hold **FIRE** to shoot.
 
 ## Open and export
@@ -23,4 +25,4 @@ The checked-in preset is for local debug builds. Its output path is `builds/tron
 
 ## Assets
 
-The supplied Tron 1982 Tank model and its license are under `vendor/tron_1982_tank/`. Other supplied asset archives under `assets/` are not used by the current game and are excluded from Git.
+Both tank models are by Shriker1. The original license files accompany the [1982 tank](vendor/tron_1982_tank/license.txt) and the [Evolution light tank](vendor/evolution_light_tank/license.txt).

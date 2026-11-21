@@ -1,7 +1,10 @@
 extends Node3D
 
-const TANK_SCENE := preload("res://vendor/tron_1982_tank/scene.gltf")
-const ARENA := 54.0
+const TANK_SCENE := preload("res://scenes/tank_rig.tscn")
+const ENEMY_SCENE := preload("res://scenes/evolution_tank_rig.tscn")
+const ARENA := 96.0
+const HALF_ARENA := ARENA * 0.5
+const ENEMIES_PER_WAVE := 2
 const PLAYER_SPEED := 7.2
 const TURN_RATE := 1.45
 const SHELL_SPEED := 24.0
@@ -16,6 +19,7 @@ var reloading := 0.0
 var enemy_brain_timer := 0.0
 var ended := false
 var hud: Label
+var crosshair: Label
 var armor_bar: ProgressBar
 var message: Label
 var joystick: Control
@@ -33,7 +37,7 @@ func _ready() -> void:
 	_build_lighting()
 	_build_arena()
 	_spawn_player()
-	_spawn_enemies(4)
+	_spawn_enemies()
 	_build_hud()
 	_build_touch_controls()
 	_update_hud()
@@ -48,6 +52,9 @@ func _process(delta: float) -> void:
 	_update_enemies(delta)
 	_update_shells(delta)
 	_update_camera(delta)
+	var tip := player.get_node("TurretPivot/Muzzle") as Marker3D
+	var sight := tip.global_position - tip.global_basis.z * 24.0
+	crosshair.position = get_viewport().get_camera_3d().unproject_position(sight) - crosshair.size * 0.5
 	if (firing or Input.is_action_pressed("fire")) and reloading <= 0.0:
 		_fire(player, true)
 		reloading = 0.72
@@ -97,15 +104,15 @@ func _build_arena() -> void:
 	ground_mat.metallic = 0.15
 	ground.material_override = ground_mat
 	add_child(ground)
-	for i in range(-27, 28, 3):
+	for i in range(-int(HALF_ARENA), int(HALF_ARENA) + 1, 3):
 		var c := Color(0.0, 0.45, 0.65, 0.22) if i % 9 == 0 else Color(0.0, 0.32, 0.44, 0.10)
-		_add_line(Vector3(i, 0.016, -27), Vector3(i, 0.016, 27), c, 0.025 if i % 9 == 0 else 0.012)
-		_add_line(Vector3(-27, 0.016, i), Vector3(27, 0.016, i), c, 0.025 if i % 9 == 0 else 0.012)
+		_add_line(Vector3(i, 0.016, -HALF_ARENA), Vector3(i, 0.016, HALF_ARENA), c, 0.025 if i % 9 == 0 else 0.012)
+		_add_line(Vector3(-HALF_ARENA, 0.016, i), Vector3(HALF_ARENA, 0.016, i), c, 0.025 if i % 9 == 0 else 0.012)
 	var wall_material := _material(Color(0.02, 0.22, 0.31), Color(0.0, 0.6, 0.85), 0.9)
 	for side in [-1, 1]:
-		_add_wall(Vector3(0, 1.2, side * 27), Vector3(54, 2.4, 0), wall_material)
-		_add_wall(Vector3(side * 27, 1.2, 0), Vector3(0, 2.4, 54), wall_material)
-	for p in [Vector3(-10, 0, -10), Vector3(10, 0, -10), Vector3(-10, 0, 10), Vector3(10, 0, 10), Vector3(-18, 0, 1), Vector3(18, 0, -1), Vector3(0, 0, -17)]:
+		_add_wall(Vector3(0, 1.2, side * HALF_ARENA), Vector3(ARENA, 2.4, 0.35), wall_material)
+		_add_wall(Vector3(side * HALF_ARENA, 1.2, 0), Vector3(0.35, 2.4, ARENA), wall_material)
+	for p in [Vector3(-10, 0, -10), Vector3(10, 0, -10), Vector3(-10, 0, 10), Vector3(10, 0, 10), Vector3(-18, 0, 1), Vector3(18, 0, -1), Vector3(0, 0, -17), Vector3(-32, 0, -25), Vector3(31, 0, -28), Vector3(-27, 0, 26), Vector3(32, 0, 23), Vector3(-7, 0, 34)]:
 		obstacles.append(p)
 		_make_bunker(p)
 
@@ -158,65 +165,42 @@ func _spawn_player() -> void:
 	player.position = Vector3(0, 0, 20)
 	add_child(player)
 
-func _spawn_enemies(count: int) -> void:
-	for i in range(count):
+func _spawn_enemies() -> void:
+	# Spawn on opposite approaches. Mirror a lane if the player occupies it.
+	for i in range(ENEMIES_PER_WAVE):
 		var enemy := _make_tank(false)
-		var candidate := Vector3(arena_rng.randf_range(-21, 21), 0, arena_rng.randf_range(-16, 4))
-		var tries := 0
-		while (candidate.distance_to(player.position) < 18.0 or _near_obstacle(candidate, 5.0)) and tries < 24:
-			candidate = Vector3(arena_rng.randf_range(-21, 21), 0, arena_rng.randf_range(-16, 4))
-			tries += 1
-		enemy.position = candidate
-		enemy.rotation.y = arena_rng.randf_range(-PI, PI)
+		var entry := Vector3(-6.0, 0, -9.0) if i == 0 else Vector3(13.0, 0, -1.0)
+		if entry.distance_to(player.position) < 16.0:
+			entry.z = 34.0 if player.position.z < 0.0 else -34.0
+		enemy.position = entry
+		var offset := player.position - entry
+		enemy.rotation.y = atan2(-offset.x, -offset.z)
 		add_child(enemy)
 		enemies.append(enemy)
 
 func _make_tank(is_player: bool) -> Node3D:
-	var root := Node3D.new()
+	var scene := TANK_SCENE if is_player else ENEMY_SCENE
+	var root := scene.instantiate() as Node3D
 	root.set_meta("hp", 3 if is_player else 2)
 	root.set_meta("reload", arena_rng.randf_range(1.1, 2.0))
 	root.set_meta("state", "hunt")
 	root.set_meta("speed", 7.2 if is_player else arena_rng.randf_range(2.5, 3.6))
-	root.set_meta("turret_yaw", 0.0)
 	var collider := StaticBody3D.new()
+	collider.name = "Hull"
+	collider.collision_layer = 2
 	var collision_shape := CollisionShape3D.new()
 	var hull_shape := BoxShape3D.new()
-	hull_shape.size = Vector3(2.5, 1.5, 3.5)
+	hull_shape.size = Vector3(3.2, 1.4, 4.6) if is_player else Vector3(3.8, 1.25, 5.2)
 	collision_shape.shape = hull_shape
 	collision_shape.position.y = 0.75
 	collider.add_child(collision_shape)
 	root.add_child(collider)
-	var model := TANK_SCENE.instantiate()
-	model.scale = Vector3.ONE * 1.8
-	model.rotation.y = PI
-	root.add_child(model)
 	var light := OmniLight3D.new()
 	light.position = Vector3(0, 1.3, 0)
 	light.light_color = Color(0.0, 0.72, 1.0) if is_player else Color(1.0, 0.18, 0.035)
 	light.light_energy = 0.25
 	light.omni_range = 4.5
 	root.add_child(light)
-	var turret := Node3D.new()
-	turret.name = "TurretPivot"
-	turret.position = Vector3(0, 1.0, 0)
-	root.add_child(turret)
-	var barrel := MeshInstance3D.new()
-	var barrel_mesh := CylinderMesh.new()
-	barrel_mesh.top_radius = 0.09
-	barrel_mesh.bottom_radius = 0.13
-	barrel_mesh.height = 2.0
-	barrel.mesh = barrel_mesh
-	barrel.rotation.x = PI * 0.5
-	barrel.position = Vector3(0, 0.0, -1.0)
-	barrel.material_override = _material(Color(0.07, 0.16, 0.2), Color(0.0, 0.55, 0.85), 0.45)
-	turret.add_child(barrel)
-	var mantle := MeshInstance3D.new()
-	var mantle_mesh := BoxMesh.new()
-	mantle_mesh.size = Vector3(1.0, 0.45, 0.9)
-	mantle.mesh = mantle_mesh
-	mantle.position.y = -0.12
-	mantle.material_override = _material(Color(0.08, 0.15, 0.19), Color(0.0, 0.22, 0.32), 0.2)
-	turret.add_child(mantle)
 	if is_player:
 		var pivot := Node3D.new()
 		pivot.name = "CameraPivot"
@@ -243,16 +227,16 @@ func _update_player(delta: float) -> void:
 	var next_pos := player.position + forward * throttle * speed * delta
 	if _can_move(next_pos):
 		player.position = next_pos
-	var camera := player.get_node("CameraPivot/Camera3D") as Camera3D
-	if aim_touch >= 0:
-		camera.rotation.y -= aim_delta.x * 0.0025
-		camera.rotation.x = clampf(camera.rotation.x - aim_delta.y * 0.0017, -0.1, 0.34)
-		var turret: Node3D = player.get_node("TurretPivot")
-		turret.rotation.y = -camera.rotation.y
-		aim_delta = Vector2.ZERO
-	else:
-		var turret: Node3D = player.get_node("TurretPivot")
-		turret.rotation.y = move_toward(turret.rotation.y, 0.0, delta * 1.6)
+	var turret := player.get_node("TurretPivot") as Node3D
+	turret.rotation.y -= aim_delta.x * 0.0025
+	turret.rotation.x = clampf(turret.rotation.x - aim_delta.y * 0.0017, -0.12, 0.22)
+	aim_delta = Vector2.ZERO
+	var pivot := player.get_node("CameraPivot") as Node3D
+	pivot.rotation.y = turret.rotation.y
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+		aim_delta += event.relative
 
 func _update_enemies(delta: float) -> void:
 	for enemy in enemies:
@@ -276,14 +260,20 @@ func _update_enemies(delta: float) -> void:
 			var next_pos := enemy.position - enemy.global_basis.z * float(enemy.get_meta("speed")) * 0.55 * delta
 			if _can_move(next_pos):
 				enemy.position = next_pos
+		var turret := enemy.get_node("TurretPivot") as Node3D
+		var muzzle := turret.get_node("Muzzle") as Marker3D
+		var target := player.global_position + Vector3.UP
+		var offset := target - muzzle.global_position
+		var barrel_yaw := atan2(-offset.x, -offset.z)
+		turret.rotation.y = rotate_toward(turret.rotation.y, barrel_yaw - enemy.rotation.y, 1.9 * delta)
+		turret.rotation.x = clampf(atan2(offset.y, Vector2(offset.x, offset.z).length()), -0.12, 0.22)
+		var aligned := (-muzzle.global_basis.z).dot((target - muzzle.global_position).normalized()) > 0.999
 		var reload: float = enemy.get_meta("reload")
 		reload -= delta
-		if reload <= 0.0 and clear and distance < 36.0:
+		if reload <= 0.0 and clear and aligned and distance < 36.0:
 			_fire(enemy, false)
 			reload = arena_rng.randf_range(1.8, 3.2)
 		enemy.set_meta("reload", reload)
-		var turret: Node3D = enemy.get_node("TurretPivot")
-		turret.rotation.y = 0.0
 
 func _update_camera(delta: float) -> void:
 	var pivot := player.get_node("CameraPivot") as Node3D
@@ -291,15 +281,9 @@ func _update_camera(delta: float) -> void:
 	pivot.global_position = pivot.global_position.lerp(target, minf(1.0, 5.0 * delta))
 
 func _fire(from: Node3D, player_shell: bool) -> void:
-	var direction: Vector3
-	var muzzle: Vector3
-	if player_shell:
-		var camera := player.get_node("CameraPivot/Camera3D") as Camera3D
-		direction = -camera.global_basis.z.normalized()
-		muzzle = from.global_position + Vector3.UP * 1.45 + (-from.global_basis.z * 1.7)
-	else:
-		direction = (player.global_position + Vector3.UP * 0.9 - from.global_position - Vector3.UP).normalized()
-		muzzle = from.global_position + Vector3.UP * 1.1 + direction * 1.8
+	var tip := from.get_node("TurretPivot/Muzzle") as Marker3D
+	var direction := -tip.global_basis.z.normalized()
+	var muzzle := tip.global_position
 	var color := Color(0.12, 0.78, 1.0) if player_shell else Color(1.0, 0.22, 0.07)
 	var shell := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
@@ -309,7 +293,7 @@ func _fire(from: Node3D, player_shell: bool) -> void:
 	shell.position = muzzle
 	shell.material_override = _material(color, color, 2.5)
 	add_child(shell)
-	shells.append({"node": shell, "direction": direction, "player": player_shell, "life": 2.5})
+	shells.append({"node": shell, "direction": direction, "player": player_shell, "life": 2.5, "owner_rid": (from.get_node("Hull") as StaticBody3D).get_rid()})
 	_spawn_flash(muzzle, color, 0.25)
 
 func _update_shells(delta: float) -> void:
@@ -320,23 +304,16 @@ func _update_shells(delta: float) -> void:
 		var from: Vector3 = shell.position
 		var to: Vector3 = from + shell_data.direction * SHELL_SPEED * delta
 		var query := PhysicsRayQueryParameters3D.create(from, to)
-		query.collide_with_areas = true
+		query.exclude = [shell_data.owner_rid]
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
 		var did_hit := not hit.is_empty()
 		if did_hit:
 			var hit_pos: Vector3 = hit.position
-			if shell_data.player:
-				var target: Node = hit.collider
-				while target != null and not target in enemies:
-					target = target.get_parent()
-				if target != null:
-					_damage_enemy(target)
-			else:
-				var target := hit.collider as Node
-				while target != null and target != player:
-					target = target.get_parent()
-				if target == player:
-					_damage_player()
+			var target := (hit.collider as Node).get_parent() as Node3D
+			if shell_data.player and target in enemies:
+				_damage_enemy(target)
+			elif not shell_data.player and target == player:
+				_damage_player()
 			_spawn_impact(hit_pos, Color(0.12, 0.72, 1.0) if shell_data.player else Color(1.0, 0.2, 0.06))
 		else:
 			shell.position = to
@@ -356,7 +333,7 @@ func _damage_enemy(enemy: Node) -> void:
 		score += 100
 		enemy.queue_free()
 		if enemies.is_empty():
-			_spawn_enemies(4)
+			_spawn_enemies()
 	_update_hud()
 
 func _damage_player() -> void:
@@ -416,10 +393,8 @@ func _build_hud() -> void:
 	armor_bar.max_value = 5
 	armor_bar.show_percentage = false
 	root.add_child(armor_bar)
-	var crosshair := Label.new()
+	crosshair = Label.new()
 	crosshair.text = "+"
-	crosshair.set_anchors_preset(Control.PRESET_CENTER)
-	crosshair.position = Vector2(-8, -18)
 	crosshair.add_theme_font_size_override("font_size", 28)
 	crosshair.add_theme_color_override("font_color", Color(0.45, 0.88, 1.0, 0.8))
 	root.add_child(crosshair)
@@ -531,7 +506,7 @@ func _near_obstacle(p: Vector3, radius: float) -> bool:
 	return false
 
 func _line_clear(from: Vector3, to: Vector3) -> bool:
-	var query := PhysicsRayQueryParameters3D.create(from, to)
+	var query := PhysicsRayQueryParameters3D.create(from, to, 1)
 	return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
 
 func _add_line(a: Vector3, b: Vector3, color: Color, width: float) -> void:

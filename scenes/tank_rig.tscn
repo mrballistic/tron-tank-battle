@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://vendor/tron_1982_tank/scene.gltf" id="1"]
+[ext_resource type="Script" path="res://scripts/tank_rig.gd" id="2"]
+
+[node name="Tank" type="Node3D"]
+script = ExtResource("2")
+turret_assembly = &"Cylinder"
+
+[node name="Artwork" parent="." instance=ExtResource("1")]
+rotation = Vector3(0, -1.5707963, 0)
+scale = Vector3(1.8, 1.8, 1.8)
+
+[node name="TurretPivot" type="Node3D" parent="."]
+position = Vector3(0.6069, 1.0052, 0.5796)
+
+[node name="Muzzle" type="Marker3D" parent="TurretPivot"]
+position = Vector3(-1.166, 0.128, -3.561)

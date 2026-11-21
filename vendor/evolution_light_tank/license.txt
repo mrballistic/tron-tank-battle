@@ -1,0 +1,8 @@
+Model Information:
+* title:	Light Tank | Tron: Evolution
+* source:	https://sketchfab.com/3d-models/light-tank-tron-evolution-b9391de4c21d4cd2b6c22b4871f178b2
+* author:	Shriker1 (https://sketchfab.com/Shriker1)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

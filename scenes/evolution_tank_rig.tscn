@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://vendor/evolution_light_tank/scene.gltf" id="1"]
+[ext_resource type="Script" path="res://scripts/tank_rig.gd" id="2"]
+
+[node name="Tank" type="Node3D"]
+script = ExtResource("2")
+turret_assembly = &"Turret Mount"
+
+[node name="Artwork" parent="." instance=ExtResource("1")]
+rotation = Vector3(0, 1.5707963, 0)
+scale = Vector3(0.65, 0.65, 0.65)
+
+[node name="TurretPivot" type="Node3D" parent="."]
+position = Vector3(0.497, 0.925, 1.183)
+
+[node name="Muzzle" type="Marker3D" parent="TurretPivot"]
+position = Vector3(-1.146, -0.057, -3.987)
