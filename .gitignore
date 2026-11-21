@@ -1,0 +1,32 @@
+# Godot generated/editor state
+.godot/
+.import/
+export.cfg
+
+# Exported games and Android artifacts
+builds/
+exports/
+*.apk
+*.aab
+*.obb
+*.pck
+
+# Signing keys and local credentials
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+local.properties
+
+# Supplied source asset bundle. Only model assets used by the game are
+# vendored under /vendor; keep unrelated source packs out of Git.
+/assets/
+
+# Editor and operating system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

@@ -1,0 +1,8 @@
+Model Information:
+* title:	Tron 1982 Tank
+* source:	https://sketchfab.com/3d-models/tron-1982-tank-99f4ae8ce97445e8909c02d7481d12d9
+* author:	Shriker1 (https://sketchfab.com/Shriker1)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works
